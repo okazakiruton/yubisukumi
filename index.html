@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゆびすくみ vs CPU</title>
+
+<!-- OGP: 公開URL確定後に og:url / og:image / twitter:image を実際の値に差し替えてください -->
+<meta property="og:title" content="ゆびすくみ vs CPU">
+<meta property="og:description" content="ルーレットで指定された指と色のキーをホールド。CPUと交互に指を置き合って、何連続成功できるか腕試し！">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://example.com/yubisukumi.html">
+<meta property="og:image" content="https://example.com/og-image.png">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ゆびすくみ vs CPU">
+<meta name="twitter:description" content="ルーレットで指定された指と色のキーをホールド。CPUと交互に指を置き合って、何連続成功できるか腕試し！">
+<meta name="twitter:image" content="https://example.com/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12141c;
+    --panel: #1c202c;
+    --panel-2: #232838;
+    --ink: #eef0f7;
+    --muted: #7d84a0;
+    --red: #ff3b3b;
+    --yellow: #ffc300;
+    --blue: #3a86ff;
+    --green: #2ecc71;
+    --purple: #b06cff;
+    --pink: #ff3fa4;
+    --you: #ffd23f;
+    --cpu: #b06cff;
+    --miss: #ff2e88;
+    --idle-key: #262b3b;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, #1b2036 0%, transparent 45%),
+      radial-gradient(circle at 85% 100%, #241a30 0%, transparent 45%),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    min-height:100vh;
+    padding:26px 16px 60px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+  }
+
+  h1{
+    font-family:'Anton', sans-serif;
+    font-weight:400;
+    font-size:clamp(20px, 5.2vw, 32px);
+    letter-spacing:1px;
+    margin:0;
+    text-align:center;
+    background:linear-gradient(90deg, var(--you), var(--cpu));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .subtitle{ color:var(--muted); font-size:12px; text-align:center; max-width:460px; line-height:1.7; }
+
+  .stat-row{ display:flex; gap:14px; }
+  .stat{ background:var(--panel); border-radius:14px; padding:10px 22px; text-align:center; min-width:96px; }
+  .stat .num{ font-family:'Anton', sans-serif; font-size:30px; line-height:1.1; }
+  .stat.current .num{ color:var(--you); }
+  .stat.best .num{ color:var(--muted); }
+  .stat .label{ font-size:11px; color:var(--muted); letter-spacing:1px; margin-top:2px; }
+
+  .hold-panels{ display:flex; gap:10px; width:min(460px, 94vw); }
+  .hold-panel{ flex:1; background:var(--panel); border-radius:14px; padding:8px 10px; }
+  .hold-panel .side-label{ font-size:10px; letter-spacing:1px; text-align:center; margin-bottom:6px; }
+  .hold-panel.you .side-label{ color:var(--you); }
+  .hold-panel.cpu .side-label{ color:var(--cpu); }
+  .hold-badges{ display:flex; gap:5px; }
+  .hold-badge{ flex:1; text-align:center; padding:5px 2px; border-radius:8px; background:var(--panel-2); }
+  .hold-badge .fname{ font-size:9px; color:var(--muted); }
+  .hold-badge .fkey{ font-family:'Anton', sans-serif; font-size:14px; color:#454b60; }
+  .hold-badge.on.you-on .fkey{ color:var(--you); }
+  .hold-badge.on.cpu-on .fkey{ color:var(--cpu); }
+
+  .turn-indicator{
+    font-size:12px; font-weight:700; letter-spacing:1px; text-align:center;
+    padding:4px 14px; border-radius:999px; background:var(--panel-2);
+  }
+  .turn-indicator.you{ color:var(--you); }
+  .turn-indicator.cpu{ color:var(--cpu); }
+
+  .reel-panel{
+    background:var(--panel);
+    border-radius:20px;
+    padding:16px 22px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    width:min(460px, 94vw);
+  }
+  .reels{ display:flex; gap:12px; width:100%; }
+  .reel{
+    flex:1; background:var(--panel-2); border-radius:14px; padding:10px 8px; text-align:center;
+    min-height:62px; display:flex; flex-direction:column; justify-content:center; gap:4px;
+    border:2px solid #2a3044;
+  }
+  .reel .reel-label{ font-size:10px; color:var(--muted); letter-spacing:2px; }
+  .reel .reel-value{ font-family:'Anton', sans-serif; font-size:20px; letter-spacing:1px; }
+  .reel.locked{ border-color: var(--reel-color, var(--you)); }
+
+  .spin-btn{
+    width:100%; background:linear-gradient(90deg, var(--you), var(--cpu)); color:#14141c; border:none;
+    font-family:'Anton', sans-serif; letter-spacing:1px; font-size:15px; padding:12px; border-radius:14px; cursor:pointer;
+  }
+  .spin-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .spin-btn:focus-visible{ outline:2px solid var(--you); outline-offset:2px; }
+
+  .phase-msg{ min-height:18px; font-size:12px; font-weight:700; color:var(--muted); text-align:center; }
+  .phase-msg.action{ color:var(--you); }
+  .phase-msg.cpu-msg{ color:var(--cpu); }
+
+  .board{ display:grid; grid-template-columns:repeat(6, 1fr); gap:7px; background:var(--panel); padding:16px; border-radius:20px; }
+  .keycap{
+    width:46px; height:46px; border-radius:10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:'Anton', sans-serif; font-size:15px; color:#0b0c12;
+    background:var(--k-color, var(--idle-key));
+    box-shadow:0 3px 0 rgba(0,0,0,.35);
+    position:relative;
+    transition:transform .08s ease, filter .1s ease;
+  }
+  .keycap .badge{ font-family:'Zen Kaku Gothic New', sans-serif; font-size:6.5px; font-weight:900; margin-top:1px; }
+  .keycap.held{ box-shadow:none; opacity:.9; }
+  .keycap.held.you{ box-shadow: inset 0 0 0 2px var(--you); transform:translateY(3px); }
+  .keycap.held.cpu{ box-shadow: inset 0 0 0 2px var(--cpu); }
+  .keycap.held .badge.you{ color:var(--you); }
+  .keycap.held .badge.cpu{ color:var(--cpu); }
+  .keycap.target{ outline:3px solid #fff; outline-offset:2px; }
+  .keycap.flash-ng{ background:var(--miss) !important; color:#fff; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:6px 12px; justify-content:center; max-width:440px; }
+  .legend-item{ display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--muted); }
+  .legend-dot{ width:9px; height:9px; border-radius:3px; }
+
+  .over-panel{
+    display:none; flex-direction:column; align-items:center; gap:8px;
+    background:var(--panel); border-radius:20px; padding:20px 26px;
+    width:min(460px, 94vw); text-align:center;
+  }
+  .over-panel.show{ display:flex; }
+  .over-title{ font-family:'Anton', sans-serif; font-size:22px; color:var(--miss); }
+  .retry-btn{
+    background:var(--panel-2); color:var(--ink); border:2px solid var(--you);
+    font-weight:700; padding:9px 20px; border-radius:12px; cursor:pointer;
+  }
+  .retry-btn:focus-visible{ outline:2px solid var(--you); outline-offset:2px; }
+
+  .over-actions{ display:flex; gap:8px; }
+  .share-btn{
+    background:#000; color:#fff; border:2px solid #000;
+    font-weight:700; padding:9px 20px; border-radius:12px; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+  }
+  .share-btn:hover{ background:#1a1a1a; }
+  .share-btn:focus-visible{ outline:2px solid var(--you); outline-offset:2px; }
+  .share-btn svg{ width:14px; height:14px; }
+</style>
+</head>
+<body>
+
+  <h1>ゆびすくみ vs CPU</h1>
+  <div class="subtitle">ルーレットで決まった指と色のキーを押して押さえたまま。CPUも同じ盤面に指を置いていくので、空いているキーがどんどん狭まっていく。固定中の指を離す・指定色以外を押すと負け</div>
+
+  <div class="stat-row">
+    <div class="stat current"><div class="num" id="streakNum">0</div><div class="label">連続成功</div></div>
+    <div class="stat best"><div class="num" id="bestNum">0</div><div class="label">ベスト</div></div>
+  </div>
+
+  <div class="turn-indicator you" id="turnIndicator">あなたの番</div>
+
+  <div class="hold-panels">
+    <div class="hold-panel you">
+      <div class="side-label">あなた</div>
+      <div class="hold-badges" id="youBadges"></div>
+    </div>
+    <div class="hold-panel cpu">
+      <div class="side-label">CPU</div>
+      <div class="hold-badges" id="cpuBadges"></div>
+    </div>
+  </div>
+
+  <div class="reel-panel">
+    <div class="reels">
+      <div class="reel" id="reelFinger"><div class="reel-label">ゆび</div><div class="reel-value" id="reelFingerVal">-</div></div>
+      <div class="reel" id="reelColor"><div class="reel-label">いろ</div><div class="reel-value" id="reelColorVal">-</div></div>
+    </div>
+    <button class="spin-btn" id="spinBtn">ルーレットを回す</button>
+    <div class="phase-msg" id="phaseMsg"></div>
+  </div>
+
+  <div class="board" id="board"></div>
+  <div class="legend" id="legend"></div>
+
+  <div class="over-panel" id="overPanel">
+    <div class="over-title" id="overTitle">ゲームオーバー</div>
+    <div id="overDetail" style="color:var(--muted); font-size:13px;"></div>
+    <div class="over-actions">
+      <button class="retry-btn" id="retryBtn">もう一度</button>
+      <button class="share-btn" id="shareBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        Xでシェア
+      </button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const FINGERS = ['pinky','ring','middle','index'];
+  const FINGER_LABEL = { pinky:'小指', ring:'薬指', middle:'中指', index:'人差し指' };
+  const KEY_IDS = ['Q','W','E','R','T','Y','A','S','D','F','G','H','Z','X','C','V','B','N'];
+  const COLORS = ['red','yellow','blue','green','purple','pink'];
+  const COLOR_LABEL = { red:'あか', yellow:'きいろ', blue:'あお', green:'みどり', purple:'むらさき', pink:'ピンク' };
+  const COLOR_VAR = { red:'var(--red)', yellow:'var(--yellow)', blue:'var(--blue)', green:'var(--green)', purple:'var(--purple)', pink:'var(--pink)' };
+
+  let boardState = {};      // key -> { color, heldBy: null | {side, finger} }
+  let youActive = {};       // finger -> key or null
+  let cpuActive = {};       // finger -> key or null
+  let streak = 0, best = 0;
+  let turn = 'you';         // 'you' | 'cpu'
+  let phase = 'idle';       // idle | spinning | waiting_release | waiting_press | cpu_turn | over
+  let target = null;        // { finger, color }
+  let cpuTimer = null;
+
+  const els = {
+    streakNum: document.getElementById('streakNum'),
+    bestNum: document.getElementById('bestNum'),
+    turnIndicator: document.getElementById('turnIndicator'),
+    youBadges: document.getElementById('youBadges'),
+    cpuBadges: document.getElementById('cpuBadges'),
+    reelFinger: document.getElementById('reelFinger'),
+    reelFingerVal: document.getElementById('reelFingerVal'),
+    reelColor: document.getElementById('reelColor'),
+    reelColorVal: document.getElementById('reelColorVal'),
+    spinBtn: document.getElementById('spinBtn'),
+    phaseMsg: document.getElementById('phaseMsg'),
+    board: document.getElementById('board'),
+    legend: document.getElementById('legend'),
+    overPanel: document.getElementById('overPanel'),
+    overTitle: document.getElementById('overTitle'),
+    overDetail: document.getElementById('overDetail'),
+    retryBtn: document.getElementById('retryBtn'),
+    shareBtn: document.getElementById('shareBtn'),
+  };
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function buildBoard(){
+    const colorPool = shuffle([].concat(...COLORS.map(c => [c,c,c])));
+    const keys = shuffle(KEY_IDS);
+    const state = {};
+    keys.forEach((k,i) => { state[k] = { color: colorPool[i], heldBy: null }; });
+    return state;
+  }
+
+  function availableKeysOfColor(color){
+    return KEY_IDS.filter(k => boardState[k].color === color && !boardState[k].heldBy);
+  }
+
+  function renderLegend(){
+    els.legend.innerHTML = '';
+    COLORS.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'legend-item';
+      item.innerHTML = '<span class="legend-dot" style="background:' + COLOR_VAR[c] + '"></span>' + COLOR_LABEL[c];
+      els.legend.appendChild(item);
+    });
+  }
+
+  function renderBadges(container, activeMap, sideClass){
+    container.innerHTML = '';
+    FINGERS.forEach(f => {
+      const badge = document.createElement('div');
+      const key = activeMap[f];
+      badge.className = 'hold-badge' + (key ? ' on ' + sideClass + '-on' : '');
+      badge.innerHTML = '<div class="fname">' + FINGER_LABEL[f] + '</div><div class="fkey">' + (key || '-') + '</div>';
+      container.appendChild(badge);
+    });
+  }
+
+  function renderBoard(){
+    els.board.innerHTML = '';
+    KEY_IDS.forEach(k => {
+      const info = boardState[k];
+      const cap = document.createElement('div');
+      cap.className = 'keycap';
+      cap.id = 'key-' + k;
+      if(info.heldBy){
+        cap.classList.add('held', info.heldBy.side);
+        cap.innerHTML = k + '<span class="badge ' + info.heldBy.side + '">' + (info.heldBy.side === 'you' ? 'YOU' : 'CPU') + '</span>';
+      } else {
+        cap.style.setProperty('--k-color', COLOR_VAR[info.color]);
+        cap.textContent = k;
+      }
+      els.board.appendChild(cap);
+    });
+  }
+
+  function renderAll(){
+    els.streakNum.textContent = streak;
+    els.bestNum.textContent = best;
+    renderBadges(els.youBadges, youActive, 'you');
+    renderBadges(els.cpuBadges, cpuActive, 'cpu');
+    renderBoard();
+    els.turnIndicator.textContent = turn === 'you' ? 'あなたの番' : 'CPUの番';
+    els.turnIndicator.className = 'turn-indicator ' + turn;
+  }
+
+  function newGame(){
+    boardState = buildBoard();
+    youActive = { pinky:null, ring:null, middle:null, index:null };
+    cpuActive = { pinky:null, ring:null, middle:null, index:null };
+    streak = 0;
+    turn = 'you';
+    phase = 'idle';
+    target = null;
+    if(cpuTimer) clearTimeout(cpuTimer);
+    els.reelFingerVal.textContent = '-';
+    els.reelColorVal.textContent = '-';
+    els.reelFinger.classList.remove('locked');
+    els.reelColor.classList.remove('locked');
+    els.phaseMsg.textContent = '';
+    els.phaseMsg.className = 'phase-msg';
+    els.spinBtn.disabled = false;
+    els.overPanel.classList.remove('show');
+    renderAll();
+    renderLegend();
+  }
+
+  function legalTargets(){
+    // all (finger,color) pairs where at least one key of that color is currently free
+    const out = [];
+    FINGERS.forEach(f => {
+      COLORS.forEach(c => {
+        if(availableKeysOfColor(c).length > 0) out.push({ finger:f, color:c });
+      });
+    });
+    return out;
+  }
+
+  function clearTargetHighlight(){
+    document.querySelectorAll('.keycap.target').forEach(k => k.classList.remove('target'));
+  }
+
+  function spin(){
+    if(turn !== 'you' || phase !== 'idle') return;
+    const pool = legalTargets();
+    if(pool.length === 0){ endGame('盤面が埋まってしまい、指す場所がありません', false); return; }
+
+    phase = 'spinning';
+    els.spinBtn.disabled = true;
+    els.phaseMsg.textContent = '';
+    els.phaseMsg.className = 'phase-msg';
+    els.reelFinger.classList.remove('locked');
+    els.reelColor.classList.remove('locked');
+    clearTargetHighlight();
+
+    let ticks = 0;
+    const maxTicks = 14;
+    const spinInterval = setInterval(()=>{
+      const pick = pool[Math.floor(Math.random()*pool.length)];
+      els.reelFingerVal.textContent = FINGER_LABEL[pick.finger];
+      els.reelColorVal.textContent = COLOR_LABEL[pick.color];
+      ticks++;
+      if(ticks >= maxTicks){
+        clearInterval(spinInterval);
+        lockResult(pool);
+      }
+    }, 65);
+  }
+
+  function lockResult(pool){
+    target = pool[Math.floor(Math.random()*pool.length)];
+    els.reelFingerVal.textContent = FINGER_LABEL[target.finger];
+    els.reelColorVal.textContent = COLOR_LABEL[target.color];
+    els.reelFinger.classList.add('locked');
+    els.reelColor.classList.add('locked');
+    els.reelColor.style.setProperty('--reel-color', COLOR_VAR[target.color]);
+
+    if(youActive[target.finger] !== null){
+      phase = 'waiting_release';
+      els.phaseMsg.textContent = FINGER_LABEL[target.finger] + 'を今のキーから離して…';
+      els.phaseMsg.className = 'phase-msg action';
+    } else {
+      phase = 'waiting_press';
+      els.phaseMsg.textContent = FINGER_LABEL[target.finger] + 'で ' + COLOR_LABEL[target.color] + ' の空きキーを押して押さえよう';
+      els.phaseMsg.className = 'phase-msg action';
+    }
+  }
+
+  function findYourHeldFingerByKey(key){
+    for(const f of FINGERS){
+      if(youActive[f] === key) return f;
+    }
+    return null;
+  }
+
+  function handleKeyUp(e){
+    if(phase === 'over') return;
+    const key = e.key.toUpperCase();
+    const f = findYourHeldFingerByKey(key);
+    if(!f) return; // not a key you're currently holding
+
+    if(phase === 'waiting_release' && f === target.finger){
+      boardState[key].heldBy = null;
+      youActive[f] = null;
+      renderAll();
+      phase = 'waiting_press';
+      els.phaseMsg.textContent = FINGER_LABEL[f] + 'で ' + COLOR_LABEL[target.color] + ' の空きキーを押して押さえよう';
+      els.phaseMsg.className = 'phase-msg action';
+      return;
+    }
+    endGame(FINGER_LABEL[f] + 'が固定中に離れてしまった', true);
+  }
+
+  function handleKeyDown(e){
+    if(phase === 'over') return;
+    if(e.repeat) return;
+    if(turn !== 'you' || phase !== 'waiting_press') {
+      // pressing something when it's not your turn to press is ignored unless it's a tracked key mid-hold-phase
+      if(phase === 'waiting_release'){
+        const key = e.key.toUpperCase();
+        if(KEY_IDS.includes(key)){
+          endGame('指定と違う操作（先にキーを離す必要があった）', true);
+        }
+      }
+      return;
+    }
+    const key = e.key.toUpperCase();
+    if(!KEY_IDS.includes(key)) return;
+    const info = boardState[key];
+
+    if(!info.heldBy && info.color === target.color){
+      info.heldBy = { side:'you', finger: target.finger };
+      youActive[target.finger] = key;
+      streak++;
+      if(streak > best) best = streak;
+      clearTargetHighlight();
+      renderAll();
+      els.phaseMsg.textContent = 'せいかい！CPUの番へ';
+      els.phaseMsg.className = 'phase-msg';
+      phase = 'cpu_turn';
+      turn = 'cpu';
+      renderAll();
+      cpuTimer = setTimeout(cpuTurn, 750);
+    } else {
+      const cap = document.getElementById('key-' + key);
+      if(cap) cap.classList.add('flash-ng');
+      const reason = info.heldBy ? '使用中のキーを押した' : ('違う色（' + COLOR_LABEL[info.color] + '）のキーを押した');
+      endGame(reason, true);
+    }
+  }
+
+  function cpuTurn(){
+    if(phase === 'over') return;
+    // build cpu's legal moves
+    const options = [];
+    FINGERS.forEach(f => {
+      COLORS.forEach(c => {
+        if(availableKeysOfColor(c).length > 0) options.push({ finger:f, color:c });
+      });
+    });
+
+    if(options.length === 0){
+      els.phaseMsg.textContent = 'CPUは動けず、パスした';
+      els.phaseMsg.className = 'phase-msg cpu-msg';
+      endTurnBackToYou();
+      return;
+    }
+
+    const pick = options[Math.floor(Math.random()*options.length)];
+    // release cpu's old key on that finger, if any
+    if(cpuActive[pick.finger] !== null){
+      boardState[cpuActive[pick.finger]].heldBy = null;
+      cpuActive[pick.finger] = null;
+    }
+    const avail = availableKeysOfColor(pick.color);
+    const newKey = avail[Math.floor(Math.random()*avail.length)];
+    boardState[newKey].heldBy = { side:'cpu', finger: pick.finger };
+    cpuActive[pick.finger] = newKey;
+
+    renderAll();
+    els.phaseMsg.textContent = 'CPUが' + FINGER_LABEL[pick.finger] + 'を ' + COLOR_LABEL[pick.color] + '(' + newKey + ') に置いた';
+    els.phaseMsg.className = 'phase-msg cpu-msg';
+    const cap = document.getElementById('key-' + newKey);
+    if(cap){ cap.style.filter = 'brightness(1.3)'; setTimeout(()=>{ if(cap) cap.style.filter=''; }, 300); }
+
+    cpuTimer = setTimeout(endTurnBackToYou, 700);
+  }
+
+  function endTurnBackToYou(){
+    if(phase === 'over') return;
+    turn = 'you';
+    phase = 'idle';
+    target = null;
+    renderAll();
+    els.spinBtn.disabled = false;
+  }
+
+  function endGame(reason, showStreak){
+    phase = 'over';
+    if(cpuTimer) clearTimeout(cpuTimer);
+    els.spinBtn.disabled = true;
+    els.overPanel.classList.add('show');
+    els.overTitle.textContent = 'ゲームオーバー';
+    els.overDetail.textContent = reason + (showStreak ? ' ／ 連続成功: ' + streak + '回（ベスト: ' + best + '回）' : '');
+    els.phaseMsg.textContent = '';
+  }
+
+  function shareToX(){
+    const text = 'ゆびすくみ vs CPU で ' + streak + '連続成功しました！（ベスト: ' + best + '連続）\n#ゆびすくみ';
+    const url = window.location.href;
+    const intent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+    window.open(intent, '_blank', 'noopener,noreferrer');
+  }
+
+  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('keyup', handleKeyUp);
+  els.spinBtn.addEventListener('click', spin);
+  els.retryBtn.addEventListener('click', newGame);
+  els.shareBtn.addEventListener('click', shareToX);
+
+  newGame();
+})();
+</script>
+</body>
+</html>
