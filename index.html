@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ゆびすくみ vs CPU</title>
 
-<!-- OGP: 公開URL確定後に og:url / og:image / twitter:image を実際の値に差し替えてください -->
+<!-- OGP -->
 <meta property="og:title" content="ゆびすくみ vs CPU">
 <meta property="og:description" content="ルーレットで指定された指と色のキーをホールド。CPUと交互に指を置き合って、何連続成功できるか腕試し！">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://example.com/yubisukumi.html">
-<meta property="og:image" content="https://example.com/og-image.png">
+<meta property="og:url" content="https://okazakiruton.github.io/yubisukumi/">
+<meta property="og:image" content="https://okazakiruton.github.io/yubisukumi/og-image.png">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="ゆびすくみ vs CPU">
 <meta name="twitter:description" content="ルーレットで指定された指と色のキーをホールド。CPUと交互に指を置き合って、何連続成功できるか腕試し！">
-<meta name="twitter:image" content="https://example.com/og-image.png">
+<meta name="twitter:image" content="https://okazakiruton.github.io/yubisukumi/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -569,7 +569,7 @@
 
   function shareToX(){
     const text = 'ゆびすくみ vs CPU で ' + streak + '連続成功しました！（ベスト: ' + best + '連続）\n#ゆびすくみ';
-    const url = window.location.href;
+    const url = 'https://okazakiruton.github.io/yubisukumi/';
     const intent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
     window.open(intent, '_blank', 'noopener,noreferrer');
   }
