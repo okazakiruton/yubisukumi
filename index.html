@@ -125,14 +125,14 @@
   .phase-msg.cpu-msg{ color:var(--cpu); }
 
   .board{
-    display:grid; grid-template-columns:repeat(6, 1fr); gap:7px;
-    background:var(--panel); padding:16px; border-radius:20px;
+    display:grid; grid-template-columns:repeat(6, 1fr); gap:10px;
+    background:var(--panel); padding:18px; border-radius:20px;
     touch-action:none;
   }
   .keycap{
-    width:46px; height:46px; border-radius:10px;
+    width:62px; height:62px; border-radius:12px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    font-family:'Anton', sans-serif; font-size:15px; color:#0b0c12;
+    font-family:'Anton', sans-serif; font-size:21px; color:#0b0c12;
     background:var(--k-color, var(--idle-key));
     box-shadow:0 3px 0 rgba(0,0,0,.35);
     position:relative;
@@ -144,9 +144,10 @@
     cursor:pointer;
   }
   @media (max-width: 480px){
-    .keycap{ width:15vw; height:15vw; max-width:52px; max-height:52px; font-size:4.2vw; }
+    .board{ grid-template-columns:repeat(4, 1fr); gap:7px; padding:12px; }
+    .keycap{ width:20vw; height:20vw; max-width:78px; max-height:78px; font-size:clamp(18px, 7vw, 28px); }
   }
-  .keycap .badge{ font-family:'Zen Kaku Gothic New', sans-serif; font-size:6.5px; font-weight:900; margin-top:1px; }
+  .keycap .badge{ font-family:'Zen Kaku Gothic New', sans-serif; font-size:8px; font-weight:900; margin-top:1px; }
   .keycap.held{ box-shadow:none; opacity:.9; }
   .keycap.held.you{ box-shadow: inset 0 0 0 2px var(--you); transform:translateY(3px); }
   .keycap.held.cpu{ box-shadow: inset 0 0 0 2px var(--cpu); }
