@@ -356,6 +356,8 @@
     els.phaseMsg.textContent = '';
     els.phaseMsg.className = 'phase-msg';
     els.spinBtn.disabled = false;
+    els.spinBtn.style.display = '';
+    els.spinBtn.textContent = 'スタート';
     els.overPanel.classList.remove('show');
     renderAll();
     renderLegend();
@@ -382,7 +384,7 @@
     if(pool.length === 0){ endGame('盤面が埋まってしまい、指す場所がありません', false); return; }
 
     phase = 'spinning';
-    els.spinBtn.disabled = true;
+    els.spinBtn.style.display = 'none';
     els.phaseMsg.textContent = '';
     els.phaseMsg.className = 'phase-msg';
     els.reelFinger.classList.remove('locked');
@@ -548,14 +550,16 @@
     turn = 'you';
     phase = 'idle';
     target = null;
+    els.phaseMsg.textContent = 'つぎのルーレットへ…';
+    els.phaseMsg.className = 'phase-msg';
     renderAll();
-    els.spinBtn.disabled = false;
+    cpuTimer = setTimeout(spin, 550);
   }
 
   function endGame(reason, showStreak){
     phase = 'over';
     if(cpuTimer) clearTimeout(cpuTimer);
-    els.spinBtn.disabled = true;
+    els.spinBtn.style.display = 'none';
     els.overPanel.classList.add('show');
     els.overTitle.textContent = 'ゲームオーバー';
     els.overDetail.textContent = reason + (showStreak ? ' ／ 連続成功: ' + streak + '回（ベスト: ' + best + '回）' : '');
