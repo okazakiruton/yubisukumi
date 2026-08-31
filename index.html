@@ -124,7 +124,11 @@
   .phase-msg.action{ color:var(--you); }
   .phase-msg.cpu-msg{ color:var(--cpu); }
 
-  .board{ display:grid; grid-template-columns:repeat(6, 1fr); gap:7px; background:var(--panel); padding:16px; border-radius:20px; }
+  .board{
+    display:grid; grid-template-columns:repeat(6, 1fr); gap:7px;
+    background:var(--panel); padding:16px; border-radius:20px;
+    touch-action:none;
+  }
   .keycap{
     width:46px; height:46px; border-radius:10px;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -133,6 +137,14 @@
     box-shadow:0 3px 0 rgba(0,0,0,.35);
     position:relative;
     transition:transform .08s ease, filter .1s ease;
+    touch-action:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;
+    cursor:pointer;
+  }
+  @media (max-width: 480px){
+    .keycap{ width:15vw; height:15vw; max-width:52px; max-height:52px; font-size:4.2vw; }
   }
   .keycap .badge{ font-family:'Zen Kaku Gothic New', sans-serif; font-size:6.5px; font-weight:900; margin-top:1px; }
   .keycap.held{ box-shadow:none; opacity:.9; }
@@ -306,6 +318,7 @@
       const cap = document.createElement('div');
       cap.className = 'keycap';
       cap.id = 'key-' + k;
+      cap.dataset.key = k;
       if(info.heldBy){
         cap.classList.add('held', info.heldBy.side);
         cap.innerHTML = k + '<span class="badge ' + info.heldBy.side + '">' + (info.heldBy.side === 'you' ? 'YOU' : 'CPU') + '</span>';
@@ -416,38 +429,14 @@
     return null;
   }
 
-  function handleKeyUp(e){
+  function onKeyPress(key){
     if(phase === 'over') return;
-    const key = e.key.toUpperCase();
-    const f = findYourHeldFingerByKey(key);
-    if(!f) return; // not a key you're currently holding
-
-    if(phase === 'waiting_release' && f === target.finger){
-      boardState[key].heldBy = null;
-      youActive[f] = null;
-      renderAll();
-      phase = 'waiting_press';
-      els.phaseMsg.textContent = FINGER_LABEL[f] + 'で ' + COLOR_LABEL[target.color] + ' の空きキーを押して押さえよう';
-      els.phaseMsg.className = 'phase-msg action';
-      return;
-    }
-    endGame(FINGER_LABEL[f] + 'が固定中に離れてしまった', true);
-  }
-
-  function handleKeyDown(e){
-    if(phase === 'over') return;
-    if(e.repeat) return;
     if(turn !== 'you' || phase !== 'waiting_press') {
-      // pressing something when it's not your turn to press is ignored unless it's a tracked key mid-hold-phase
-      if(phase === 'waiting_release'){
-        const key = e.key.toUpperCase();
-        if(KEY_IDS.includes(key)){
-          endGame('指定と違う操作（先にキーを離す必要があった）', true);
-        }
+      if(phase === 'waiting_release' && KEY_IDS.includes(key)){
+        endGame('指定と違う操作（先にキーを離す必要があった）', true);
       }
       return;
     }
-    const key = e.key.toUpperCase();
     if(!KEY_IDS.includes(key)) return;
     const info = boardState[key];
 
@@ -471,6 +460,51 @@
       endGame(reason, true);
     }
   }
+
+  function onKeyRelease(key){
+    if(phase === 'over') return;
+    const f = findYourHeldFingerByKey(key);
+    if(!f) return; // not a key you're currently holding
+
+    if(phase === 'waiting_release' && f === target.finger){
+      boardState[key].heldBy = null;
+      youActive[f] = null;
+      renderAll();
+      phase = 'waiting_press';
+      els.phaseMsg.textContent = FINGER_LABEL[f] + 'で ' + COLOR_LABEL[target.color] + ' の空きキーを押して押さえよう';
+      els.phaseMsg.className = 'phase-msg action';
+      return;
+    }
+    endGame(FINGER_LABEL[f] + 'が固定中に離れてしまった', true);
+  }
+
+  function handleKeyUp(e){
+    onKeyRelease(e.key.toUpperCase());
+  }
+
+  function handleKeyDown(e){
+    if(e.repeat) return;
+    onKeyPress(e.key.toUpperCase());
+  }
+
+  // --- タッチ / マウスでの押しっぱなし操作（スマホ対応） ---
+  const activePointers = new Map(); // pointerId -> key
+
+  function handleBoardPointerDown(e){
+    const cap = e.target.closest('.keycap');
+    if(!cap || !cap.dataset.key) return;
+    e.preventDefault();
+    activePointers.set(e.pointerId, cap.dataset.key);
+    onKeyPress(cap.dataset.key);
+  }
+
+  function handlePointerEnd(e){
+    if(!activePointers.has(e.pointerId)) return;
+    const key = activePointers.get(e.pointerId);
+    activePointers.delete(e.pointerId);
+    onKeyRelease(key);
+  }
+
 
   function cpuTurn(){
     if(phase === 'over') return;
@@ -537,6 +571,9 @@
 
   document.addEventListener('keydown', handleKeyDown);
   document.addEventListener('keyup', handleKeyUp);
+  els.board.addEventListener('pointerdown', handleBoardPointerDown);
+  document.addEventListener('pointerup', handlePointerEnd);
+  document.addEventListener('pointercancel', handlePointerEnd);
   els.spinBtn.addEventListener('click', spin);
   els.retryBtn.addEventListener('click', newGame);
   els.shareBtn.addEventListener('click', shareToX);
